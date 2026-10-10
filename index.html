@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mood Board">
+<meta name="theme-color" content="#2F2D2A">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Mood Board</title>
+<style>
+:root { --serif: 'Didot', 'Bodoni 72', Georgia, 'Times New Roman', serif; --sans: -apple-system, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif; --ink: #2F2D2A; --muted: #6B675F; --line: #DCD8D0; --bg: #F6F4EF; --card: #FFFFFF; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-text-size-adjust: 100%; }
+input { -webkit-user-select: text; user-select: text; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.screen { position: absolute; inset: 0; display: none; flex-direction: column; padding: max(24px, env(safe-area-inset-top)) max(32px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(32px, env(safe-area-inset-left)); }
+.screen.on { display: flex; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; margin-bottom: 18px; }
+.back { min-height: 48px; min-width: 48px; padding: 0 18px; border-radius: 24px; border: 1px solid var(--line); background: var(--card); font-size: 16px; }
+.sig { font-family: var(--serif); font-style: italic; font-size: 20px; color: #3A3936; }
+.eyebrow { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--serif); font-weight: 400; font-size: 52px; line-height: 1.05; margin: 6px 0 8px; }
+h2 { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1.1; margin: 4px 0 6px; }
+.lead { font-size: 18px; color: #55524B; line-height: 1.5; margin: 0 0 24px; max-width: 680px; }
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+.grid { display: grid; gap: 18px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; text-align: left; display: flex; flex-direction: column; gap: 12px; min-height: 120px; transition: transform 0.12s ease; }
+.tile:active { transform: scale(0.98); }
+.tile.sel { border: 2px solid var(--ink); padding: 17px; }
+.tname { font-family: var(--serif); font-size: 26px; line-height: 1.1; }
+.tdesc { font-size: 15px; color: #55524B; line-height: 1.45; }
+.strip { display: flex; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid #E6E2DA; }
+.strip > div { flex: 1; }
+.big { flex: 1; display: grid; gap: 22px; grid-template-columns: 1fr 1fr; align-content: center; max-width: 980px; width: 100%; margin: 0 auto; }
+.bigbtn { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 34px 30px; text-align: left; min-height: 240px; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; }
+.bigbtn:active { transform: scale(0.99); }
+.bigbtn .tname { font-size: 34px; }
+.sw { display: flex; flex-direction: column; align-items: center; gap: 10px; background: transparent; border: none; padding: 6px; }
+.sw .chip { width: 100%; aspect-ratio: 1 / 1.25; border-radius: 12px; border: 1px solid #D3D4D5; }
+.sw.sel .chip { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sw span { font-size: 16px; }
+.doorPrev { height: 170px; display: flex; justify-content: center; align-items: flex-end; }
+.resultWrap { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: flex-start; }
+#boardBox { position: relative; }
+#board { width: 1200px; height: 1150px; transform-origin: top left; position: absolute; left: 0; top: 0; border-radius: 6px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); overflow: hidden; }
+.bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; padding-top: 16px; }
+.pill { min-height: 52px; padding: 0 22px; border-radius: 26px; border: 1px solid var(--ink); background: var(--card); font-size: 16px; }
+.pill.dark { background: var(--ink); color: #FFFFFF; }
+.pill.ok { background: #3B5B3A; border-color: #3B5B3A; color: #FFFFFF; }
+.name { width: 100%; max-width: 420px; font-size: 18px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-family: var(--sans); color: var(--ink); }
+.toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); background: var(--ink); color: #FFFFFF; padding: 12px 20px; border-radius: 24px; font-size: 16px; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.toast.on { opacity: 1; }
+.sheet { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; gap: 18px; align-items: center; }
+.sheet .strip { width: 160px; height: 56px; flex-shrink: 0; }
+.spec { font-size: 14px; color: #3A3936; line-height: 1.5; }
+.small { font-size: 13px; color: var(--muted); }
+@media (max-width: 1000px) { .g4 { grid-template-columns: repeat(3, minmax(0, 1fr)); } h1 { font-size: 44px; } }
+@media (orientation: portrait) { .big { grid-template-columns: 1fr; } .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+
+<section class="screen on" id="sWelcome">
+<div class="top"><div class="eyebrow">Your bedroom</div><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<div style="max-width: 980px; width: 100%; margin: 0 auto">
+<h1>Let’s find your style</h1>
+<p class="lead">Choose how you’d like to start. You can change your mind at any point, and save the looks you like to compare at the end.</p>
+<input class="name" id="custName" type="text" placeholder="Your name (optional)" autocomplete="off">
+</div>
+<div class="big">
+<button class="bigbtn" type="button" id="goMood"><div class="eyebrow">Not sure yet?</div><div class="tname">Start with a feeling</div><div class="tdesc">Pick how you want the room to feel, then a traditional or contemporary style.</div></button>
+<button class="bigbtn" type="button" id="goRange"><div class="eyebrow">Have something in mind?</div><div class="tname">Browse Sharps ranges</div><div class="tdesc">Choose a door style, then see it in every colour it comes in.</div></button>
+</div>
+<div class="bar"><button class="pill" type="button" id="goShort">My shortlist (<span id="shortCount">0</span>)</button></div>
+</section>
+
+<section class="screen" id="sMood">
+<div class="top"><button class="back" type="button" data-go="sWelcome">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<div class="eyebrow">Step 1 of 2</div><h2>How should the room feel?</h2>
+<div class="scroll"><div class="grid g4" id="moodGrid"></div></div>
+</section>
+
+<section class="screen" id="sStyle">
+<div class="top"><button class="back" type="button" data-go="sMood">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<div class="eyebrow">Step 2 of 2</div><h2>Traditional or contemporary?</h2>
+<div class="big" id="styleGrid"></div>
+</section>
+
+<section class="screen" id="sRange">
+<div class="top"><button class="back" type="button" data-go="sWelcome">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<div class="eyebrow">Step 1</div><h2>Choose a door style</h2>
+<div class="scroll"><div class="grid g4" id="rangeGrid"></div></div>
+</section>
+
+<section class="screen" id="sColour">
+<div class="top"><button class="back" type="button" data-go="sRange">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<div class="eyebrow" id="colourEyebrow">Step 2</div><h2 id="colourTitle">Choose a colour</h2>
+<div class="scroll">
+<div class="grid g4" id="colourGrid" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr))"></div>
+<div id="doorBlock" style="margin-top: 28px">
+<div class="eyebrow" style="margin-bottom: 10px">Door finish</div>
+<div class="grid" id="doorGrid" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr))"></div>
+</div>
+<div class="bar" style="justify-content: flex-start; padding-top: 28px"><button class="pill dark" type="button" id="seeLook">See the look ›</button></div>
+</div>
+</section>
+
+<section class="screen" id="sResult">
+<div class="top"><button class="back" type="button" id="resultBack">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<div class="resultWrap" id="resultWrap"><div id="boardBox"><div id="board"></div></div></div>
+<div class="bar" id="resultBar">
+<button class="pill" type="button" id="flipStyle">Try contemporary</button>
+<button class="pill" type="button" id="changeColour">Change colour</button>
+<button class="pill ok" type="button" id="saveLook">♡ Save this look</button>
+<button class="pill dark" type="button" id="toShort">My shortlist</button>
+</div>
+</section>
+
+<section class="screen" id="sShort">
+<div class="top"><button class="back" type="button" data-go="sWelcome">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
+<h2>Your shortlist</h2>
+<p class="lead" id="shortLead">Tap a look to see it again.</p>
+<div class="scroll"><div class="grid" id="shortList"></div>
+<div id="designerBox" style="display: none; margin-top: 26px">
+<div class="eyebrow" style="margin-bottom: 10px">For your designer</div>
+<div class="grid" id="specList"></div>
+</div>
+</div>
+<div class="bar">
+<button class="pill" type="button" id="showDesigner">Show my designer</button>
+<button class="pill" type="button" id="newCustomer">Start again for a new customer</button>
+</div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function compute(props) {
+const grain = 'repeating-linear-gradient(90deg, rgba(60,40,20,0.10) 0 1px, transparent 1px 9px, rgba(60,40,20,0.06) 9px 10px, transparent 10px 23px)';
+const F = {
+'White': { hex: '#F2F2F0', line: '#C8C8C5', line2: '#DCDCD9', code: 'RAL 9016' },
+'Stone': { hex: '#CDC8C1', line: '#A9A49C', line2: '#BDB8B0', code: 'Pantone 406U' },
+'Dove Grey': { hex: '#E4E5E6', line: '#B9BABC', line2: '#D3D4D5', code: 'RAL 7047' },
+'Slate': { hex: '#7F7F7F', line: '#5E5E5E', line2: '#6F6F6F', code: 'RAL 7037' },
+'Graphite': { hex: '#58585A', line: '#3C3C3E', line2: '#4B4B4D', code: 'RAL 7021' },
+'Midnight Blue': { hex: '#23293A', line: '#11151F', line2: '#323A4E', code: 'RAL 5004' },
+'Willow Green': { hex: '#7A8475', line: '#5B6357', line2: '#6C7567', code: 'RAL 7033' },
+'Soft Linen': { hex: '#DED6C4', line: '#B8AF9C', line2: '#CEC6B3', code: 'NCS S1505-Y40R' },
+'Nordic Oak': { hex: '#D2B48A', line: '#A88B62', line2: '#C1A47A', code: 'Sharps woodgrain finish', grain: true },
+'Rich Walnut': { hex: '#6A4A34', line: '#4A3323', line2: '#5B402D', code: 'Sharps woodgrain finish', grain: true },
+'Swiss Elm': { hex: '#B89F82', line: '#957E63', line2: '#A88F73', code: 'Sharps woodgrain finish', grain: true },
+'Rustic Oak': { hex: '#9E7A52', line: '#7A5C3B', line2: '#8C6B47', code: 'Sharps woodgrain finish', grain: true },
+'Urban Concrete': { hex: '#9B9893', line: '#7B7873', line2: '#8B8883', code: 'Sharps concrete-effect finish' },
+'Mist Grey': { hex: '#D6D8D9', line: '#B3B5B6', line2: '#C6C8C9', code: 'Sharps gloss finish' },
+'White Gloss': { hex: '#F5F5F3', line: '#CBCBC8', line2: '#E0E0DD', code: 'Sharps gloss finish' }
+};
+const core = ['White', 'Stone', 'Dove Grey', 'Slate', 'Graphite', 'Midnight Blue', 'Willow Green', 'Soft Linen'];
+const R = {
+'Shaker': { style: 'shaker', colours: core },
+'Sorrento': { style: 'sorrento', colours: core },
+'Hampton': { style: 'hampton', colours: core },
+'Sherbourne': { style: 'moulded', colours: core },
+'Milan': { style: 'milan', colours: ['White', 'Stone', 'Dove Grey', 'Slate', 'Graphite', 'Midnight Blue', 'Soft Linen', 'Nordic Oak', 'Rich Walnut'] },
+'Manhattan': { style: 'plain', colours: core.concat(['Nordic Oak', 'Rich Walnut']) },
+'Element': { style: 'plain', twoTone: true, colours: ['Stone', 'Dove Grey', 'Slate', 'Graphite', 'Midnight Blue', 'Willow Green'], doors: ['Nordic Oak', 'Swiss Elm'] },
+'Fusion': { style: 'plain', twoTone: true, colours: ['Graphite', 'Midnight Blue', 'Willow Green'], doors: ['Rustic Oak', 'Urban Concrete'] },
+'Cosmopolitan': { style: 'plain', twoTone: true, colours: ['Stone', 'Dove Grey', 'Slate', 'Graphite', 'Midnight Blue', 'Willow Green', 'Nordic Oak', 'Rich Walnut', 'Soft Linen'], doors: ['White Gloss'] },
+'Harmony': { style: 'plain', twoTone: true, colours: ['Rich Walnut', 'Nordic Oak'], doors: ['Soft Linen'] },
+'Pure': { style: 'plain', colours: ['White', 'Mist Grey'], gloss: true }
+};
+const fb = (name, no, hex, ink) => ({ name: name, code: 'Farrow & Ball No. ' + no, hex: hex, ink: ink || '#2F2D2A' });
+const P = {
+skimming: fb('Skimming Stone', '241', '#D8D0C4'),
+jitney: fb('Jitney', '293', '#C8B9A2'),
+mizzle: fb('Mizzle', '266', '#B3B9A8', '#2C3026'),
+joas: fb("Joa's White", '226', '#E0D6C6'),
+plaster: fb('Setting Plaster', '231', '#D8B6A4', '#3A2418'),
+treron: fb('Treron', '292', '#7E8370', '#F4F4EE'),
+elephant: fb("Elephant's Breath", '229', '#C5BCAD'),
+ammonite: fb('Ammonite', '274', '#D2CFC8'),
+pavilion: fb('Pavilion Gray', '242', '#C9C8C1'),
+shaded: fb('Shaded White', '201', '#DCD8CB'),
+stiffkey: fb('Stiffkey Blue', '281', '#3D4A5B', '#EEF0F3'),
+sulking: fb('Sulking Room Pink', '295', '#A9837C', '#241413'),
+salmon: fb('Dead Salmon', '28', '#A98274', '#231410'),
+oxford: fb('Oxford Stone', '264', '#D2C3A8'),
+pointing: fb('Pointing', '2003', '#EDE8DC')
+};
+const nickel = { name: 'Brushed nickel', hex: '#A9A8A3' };
+const brass = { name: 'Brushed brass', hex: '#B89A5E' };
+const paleOak = { label: 'Pale oak or oatmeal carpet', hex: '#D9C6A5', ink: '#3E3322' };
+const midOak = { label: 'Mid oak or warm grey carpet', hex: '#B8956A', ink: '#2E2213' };
+const S = {
+'White': { wall: P.skimming, a1: P.jitney, a2: P.mizzle, floor: paleOak, handle: nickel, title: 'Light & airy', mood: 'bright, fresh and easy to live with', textiles: 'Grey-green linen, stone knit throw', footer: 'Crisp white bedding, natural linen and plenty of daylight keep the room open and fresh. Warm 2700K lamps stop it feeling cold at night.' },
+'Stone': { wall: P.joas, a1: P.plaster, a2: P.treron, floor: paleOak, handle: nickel, title: 'Warm & natural', mood: 'soft, earthy and relaxed', textiles: 'Olive linen, plaster-pink wool', footer: 'Layer oatmeal and stone textures with linen bedding and natural wood. Warm 2700K lighting brings out the softness of the stone finish.' },
+'Dove Grey': { wall: P.elephant, a1: P.ammonite, a2: P.mizzle, floor: paleOak, handle: nickel, title: 'Calm & neutral', mood: 'quiet, light and restful', textiles: 'Grey-green linen, wool throw', footer: 'Soft white bedding, a natural linen headboard and warm 2700K lighting keep the scheme restful. Under-bridge downlights add a gentle glow at night.' },
+'Slate': { wall: P.pavilion, a1: P.shaded, a2: P.stiffkey, floor: paleOak, handle: nickel, title: 'Soft & tailored', mood: 'crisp, considered and calm', textiles: 'Deep blue linen, grey wool', footer: 'Pale grey walls let the slate finish stand out without overpowering the room. Soft white bedding and touches of Stiffkey Blue add quiet depth.' },
+'Graphite': { wall: P.jitney, a1: P.plaster, a2: P.sulking, floor: midOak, handle: brass, title: 'Moody & grounded', mood: 'cosy, warm and grown-up', textiles: 'Rose velvet, stone knit', footer: 'Warm Jitney walls soften the depth of graphite, and Sulking Room Pink cushions bring warmth to a calm, cocooning room. Warm 2700K lighting keeps it cosy at night.' },
+'Midnight Blue': { wall: P.joas, a1: P.jitney, a2: P.salmon, floor: midOak, handle: brass, title: 'Deep & restful', mood: 'rich, cocooning and calm', textiles: 'Dusty rose velvet, oatmeal wool', footer: "Midnight Blue against warm Joa's White walls feels rich but restful. Brushed brass and Dead Salmon accents lift the deep blue, with warm 2700K lighting at night." },
+'Willow Green': { wall: P.shaded, a1: P.oxford, a2: P.plaster, floor: paleOak, handle: brass, title: 'Natural & serene', mood: 'organic, soft and grounding', textiles: 'Plaster-pink linen, natural cotton', footer: 'Willow Green brings the outdoors in. Shaded White walls, natural wood and soft Setting Plaster accents keep it gentle and serene.' },
+'Soft Linen': { wall: P.pointing, a1: P.jitney, a2: P.treron, floor: paleOak, handle: brass, title: 'Soft & warm', mood: 'gentle, warm and timeless', textiles: 'Olive linen, cream bouclé', footer: 'Soft Linen against Pointing walls feels warm and timeless. Treron greens, brushed brass and natural textures complete a gentle, welcoming room.' },
+'Nordic Oak': { wall: P.skimming, a1: P.oxford, a2: P.treron, floor: paleOak, handle: nickel, title: 'Natural & light', mood: 'fresh, Scandinavian and relaxed', textiles: 'Olive linen, cream wool', footer: 'Light Nordic Oak with Skimming Stone walls feels fresh and natural. Treron greens and soft cream textures keep it calm and grounded.' },
+'Rich Walnut': { wall: P.joas, a1: P.oxford, a2: P.stiffkey, floor: paleOak, handle: brass, title: 'Warm & classic', mood: 'rich, warm and timeless', textiles: 'Deep blue velvet, oatmeal wool', footer: "Rich Walnut against warm Joa's White walls feels classic and inviting. Stiffkey Blue accents and brushed brass add depth without losing the calm." },
+'Mist Grey': { wall: P.ammonite, a1: P.shaded, a2: P.stiffkey, floor: paleOak, handle: nickel, title: 'Sleek & serene', mood: 'modern, light and calm', textiles: 'Deep blue linen, soft grey wool', footer: 'Mist Grey gloss bounces light around the room against soft Ammonite walls. Stiffkey Blue accents add a quiet, tailored contrast.' }
+};
+const M = {
+'Light & airy': { colour: 'White', Traditional: ['Shaker', null, ['Hampton', 'Sherbourne']], Contemporary: ['Pure', null, ['Manhattan', 'Cosmopolitan']] },
+'Warm & natural': { colour: 'Stone', Traditional: ['Shaker', null, ['Sherbourne', 'Hampton']], Contemporary: ['Element', 'Nordic Oak', ['Harmony', 'Sorrento']] },
+'Calm & neutral': { colour: 'Dove Grey', Traditional: ['Shaker', null, ['Hampton', 'Sherbourne']], Contemporary: ['Element', 'Swiss Elm', ['Sorrento', 'Manhattan']] },
+'Soft & tailored': { colour: 'Slate', Traditional: ['Sherbourne', null, ['Shaker', 'Hampton']], Contemporary: ['Manhattan', null, ['Cosmopolitan', 'Sorrento']] },
+'Moody & grounded': { colour: 'Graphite', Traditional: ['Shaker', null, ['Sherbourne', 'Hampton']], Contemporary: ['Fusion', 'Rustic Oak', ['Milan', 'Manhattan']] },
+'Deep & restful': { colour: 'Midnight Blue', Traditional: ['Hampton', null, ['Shaker', 'Sherbourne']], Contemporary: ['Manhattan', null, ['Element with Nordic Oak doors', 'Sorrento']] },
+'Natural & serene': { colour: 'Willow Green', Traditional: ['Shaker', null, ['Hampton', 'Sherbourne']], Contemporary: ['Element', 'Nordic Oak', ['Sorrento', 'Manhattan']] },
+'Soft & warm': { colour: 'Soft Linen', Traditional: ['Sherbourne', null, ['Shaker', 'Hampton']], Contemporary: ['Harmony', null, ['Sorrento', 'Manhattan']], frame: { Contemporary: 'Rich Walnut' } }
+};
+const byMood = props.startFrom === 'Mood & style';
+let pRange = props.range, pColour = props.colour, pDoor = props.doorFinish;
+let suggestion = '';
+let moodColour = null;
+let styleLabel = '';
+let styleChoice = null;
+if (byMood) {
+const moodName = M[props.mood] ? props.mood : 'Calm & neutral';
+const styleName = props.style === 'Contemporary' ? 'Contemporary' : 'Traditional';
+const pick = M[moodName][styleName];
+pRange = pick[0]; moodColour = M[moodName].colour; pColour = (M[moodName].frame && M[moodName].frame[styleName]) || moodColour; pDoor = pick[1] || pDoor;
+styleLabel = styleName + ' · ';
+styleChoice = styleName;
+const fr = R[pRange].twoTone; const dn = pick[1] || (fr ? R[pRange].doors[0] : null);
+suggestion = 'Our suggestion for a ' + styleName.toLowerCase() + ', ' + moodName.toLowerCase() + ' feel: ' + pRange + (fr ? ' with ' + pColour + ' frames and ' + dn + ' doors' : ' in ' + (pRange === 'Pure' && pColour === 'White' ? 'White Gloss' : pColour)) + '. Also suits: ' + pick[2].join(' or ') + '.';
+}
+const rangeName = R[pRange] ? pRange : 'Shaker';
+const r = R[rangeName];
+const wanted = pColour || 'Midnight Blue';
+const notes = [];
+let colour = wanted;
+if (r.colours.indexOf(colour) < 0) {
+colour = r.colours.indexOf('Dove Grey') >= 0 ? 'Dove Grey' : r.colours[0];
+notes.push(wanted + ' isn\u2019t available in ' + rangeName + (r.twoTone ? ' frames' : '') + ', so ' + colour + ' is shown. ' + rangeName + (r.twoTone ? ' frame colours: ' : ' colours: ') + r.colours.join(', ') + '.');
+}
+let doorName = colour;
+if (r.twoTone) {
+const wantedDoor = pDoor || r.doors[0];
+doorName = r.doors.indexOf(wantedDoor) >= 0 ? wantedDoor : r.doors[0];
+if (r.doors.length > 1 && r.doors.indexOf(wantedDoor) < 0) notes.push(wantedDoor + ' doors aren\u2019t available in ' + rangeName + ', so ' + doorName + ' is shown. ' + rangeName + ' doors: ' + r.doors.join(', ') + '.');
+}
+if (r.gloss && colour === 'White') doorName = 'White Gloss';
+const mk = (name) => { const f = F[name]; return { name: name, hex: f.hex, line: f.line, line2: f.line2, code: f.code, grain: f.grain ? grain : 'none' }; };
+const frame = mk(colour);
+const leaf = mk(doorName);
+const s = S[moodColour || colour];
+const rangeLabel = r.twoTone ? rangeName + ' doors in ' + doorName + ' with ' + colour + ' frames' : rangeName + ' doors in ' + doorName;
+const swatches = r.twoTone
+? [ { name: colour, use: 'Frames, facings and panels', code: frame.code, hex: frame.hex, grain: frame.grain }, { name: doorName, use: 'Doors and drawer fronts', code: leaf.code, hex: leaf.hex, grain: leaf.grain }, { name: s.wall.name, use: 'Walls', code: s.wall.code, hex: s.wall.hex, grain: 'none' }, { name: s.a2.name, use: 'Cushions, throws', code: s.a2.code, hex: s.a2.hex, grain: 'none' } ]
+: [ { name: doorName, use: 'Doors and frames', code: leaf.code, hex: leaf.hex, grain: leaf.grain }, { name: s.wall.name, use: 'Walls', code: s.wall.code, hex: s.wall.hex, grain: 'none' }, { name: s.a1.name, use: 'Bedding, rug', code: s.a1.code, hex: s.a1.hex, grain: 'none' }, { name: s.a2.name, use: 'Cushions, throws', code: s.a2.code, hex: s.a2.hex, grain: 'none' } ];
+const hd = (model, finish, hex, hh, shape) => ({ model: model, finish: finish, hex: hex, hh: !!hh, shape: shape || 'knob' });
+const HT = {
+'White': [hd('Isla', 'polished nickel', '#C9C7C0', false, 'knob'), hd('Alana', 'brushed nickel', '#A9A8A3', false, 'blade')],
+'Stone': [hd('Juliette', 'satin brass', '#C2A468', false, 'knob'), hd('Geddes', 'satin brass', '#C2A468', true, 'pull')],
+'Dove Grey': [hd('Scarlett', 'brushed nickel', '#A9A8A3', false, 'oval'), hd('Alana', 'brushed nickel', '#A9A8A3', false, 'blade')],
+'Slate': [hd('Sophia', 'brushed chrome', '#B3B5B7', false, 'knob'), hd('Dixton', 'chrome', '#C8CACC', true, 'pull')],
+'Graphite': [hd('Fitzrovia', 'dark brushed brass', '#8C6A3C', true, 'pull'), hd('Mia', 'matt black', '#2B2B2B', false, 'pull')],
+'Midnight Blue': [hd('Elizabeth', 'brushed brass', '#B89A5E', false, 'knob'), hd('Belgravia', 'dark brushed brass', '#8C6A3C', true, 'tbar')],
+'Willow Green': [hd('Luna', 'brushed brass', '#B89A5E', false, 'knob'), hd('Geddes', 'dark brushed brass', '#8C6A3C', true, 'pull')],
+'Soft Linen': [hd('Lily', 'brushed brass', '#B89A5E', false, 'knob'), hd('Alana', 'satin brass', '#C2A468', false, 'blade')],
+'Nordic Oak': [null, hd('Mia', 'matt black', '#2B2B2B', false, 'pull')],
+'Rich Walnut': [null, hd('Lilah', 'satin brass', '#C2A468', false, 'long')],
+'Mist Grey': [null, hd('Alana', 'brushed nickel', '#A9A8A3', false, 'blade')]
+};
+const isTrad = styleChoice ? styleChoice === 'Traditional' : ['Shaker', 'Hampton', 'Sherbourne'].indexOf(rangeName) >= 0;
+const hRow = HT[moodColour || colour] || HT['Dove Grey'];
+let hPick = (isTrad ? hRow[0] : hRow[1]) || hRow[1];
+if (hPick.model === 'Alana' && ['Shaker', 'Sorrento', 'Manhattan', 'Pure', 'Cosmopolitan', 'Element', 'Fusion'].indexOf(rangeName) < 0) {
+hPick = hPick.finish === 'satin brass' ? hd('Mia', 'satin brass', '#C2A468', false, 'pull') : hd('Scarlett', 'brushed nickel', '#A9A8A3', false, 'oval');
+}
+const SH = {
+knob: { w: '13px', h: '13px', r: '50%', top: 'calc(50% - 6px)' },
+oval: { w: '10px', h: '16px', r: '50%', top: 'calc(50% - 8px)' },
+tbar: { w: '6px', h: '22px', r: '3px', top: 'calc(50% - 11px)' },
+pull: { w: '5px', h: '56px', r: '3px', top: 'calc(50% - 28px)' },
+long: { w: '5px', h: '130px', r: '3px', top: 'calc(50% - 65px)' },
+blade: { w: '4px', h: '150px', r: '1px', top: 'calc(50% - 75px)' }
+};
+const shp0 = SH[hPick.shape] || SH.knob;
+const halfH = parseInt(shp0.h, 10) / 2;
+const waist = ({
+shaker: 'calc(16px + (100% - 48px) * 0.6 + 8px - ' + halfH + 'px)',
+moulded: 'calc(16px + (100% - 48px) * 0.6 + 8px - ' + halfH + 'px)',
+hampton: 'calc(14px + (100% - 76px) * 0.5 + 24px - ' + halfH + 'px)'
+})[r.style] || ('calc(60% - ' + halfH + 'px)');
+const shp = { w: shp0.w, h: shp0.h, r: shp0.r, top: waist };
+const off = hPick.shape === 'blade' ? '-3px' : '7px';
+const leavesOut = [
+{ side: 'right', off: off, display: 'block' },
+{ side: 'left', off: off, display: hPick.shape === 'blade' ? 'none' : 'block' }
+];
+const handleOut = { w: shp.w, h: shp.h, r: shp.r, top: shp.top, hex: hPick.hex, label: (hPick.hh ? 'H&H ' : '') + hPick.model + ', ' + hPick.finish };
+const G2 = 'repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0 3px, transparent 3px 12px)';
+const fab = (name, code, hex) => ({ name: name, code: code, hex: hex });
+const XT = {
+'White': { hb: ['Savoy Medium', 'SVM'], fab: fab('Boucle Natural', 'SR 19184', '#E9E3D6'), wall: ['Tongue & groove, half height', 'TGH', 'White T&G to dado height', '#F2F2F0', 'none'], lights: ['LB2R', 'LHD1'] },
+'Stone': { hb: ['Hudson Medium', 'HM'], fab: fab('Dundee Herringbone Linen', 'SR13601', '#D6CCB8'), wall: ['Slatted wall panel', 'SWF', 'Natural Oak slats behind the bed', '#C49A6C', 'grain'], lights: ['LB2R', 'LHW'] },
+'Dove Grey': { hb: ['Mela', 'ML'], fab: fab('Dundee Herringbone Dove', 'SR13611', '#C9C8C3'), wall: ['Tongue & groove, half height', 'TGH', 'Dove T&G to dado height', '#E4E5E6', 'none'], lights: ['LB2R', 'LHD1'] },
+'Slate': { hb: ['Carlton Medium', 'CRM'], fab: fab('Pastiche Crush Slub Steel', 'SR18030', '#8D9196'), wall: ['Tongue & groove, full height', 'TGF', 'Slate T&G behind the bed', '#7F7F7F', 'none'], lights: ['LB2R', 'LIS1'] },
+'Graphite': { hb: ['Hudson Tall', 'HT'], fab: fab('Pimlico Crush Charcoal', 'SR16180', '#4A4A4C'), wall: ['Slatted wall panel', 'SWF', 'Charcoal Black slats behind the bed', '#2E2E2E', 'slat'], lights: ['LB2R', 'LHW'] },
+'Midnight Blue': { hb: ['Hudson Medium', 'HM'], fab: fab('Pimlico Crush Blush', 'SR16181', '#D4AFA6'), wall: ['Slatted wall panel', 'SWF', 'Espresso Walnut slats behind the bed', '#4B3326', 'grain'], lights: ['LB2R', 'LHW'] },
+'Willow Green': { hb: ['Morgan Medium', 'MGM'], fab: fab('Dundee Herringbone Sage', 'SR13635', '#A9B09A'), wall: ['Slatted wall panel', 'SWF', 'Natural Oak slats behind the bed', '#C49A6C', 'grain'], lights: ['LB2R', 'LHD1'] },
+'Soft Linen': { hb: ['Soho', 'SO'], fab: fab('Pimlico Crush Nougat', 'SR16171', '#CDB9A0'), wall: ['Tongue & groove, half height', 'TGH', 'Soft Linen T&G to dado height', '#DED6C4', 'none'], lights: ['LB2R', 'LHW'] },
+'Nordic Oak': { hb: ['Muse', 'W'], fab: fab('Dundee Plain Lovat', 'SR13602', '#8E8C6E'), wall: ['Slatted wall panel', 'SWF', 'Natural Oak slats behind the bed', '#C49A6C', 'grain'], lights: ['LB2R', 'LHD1'] },
+'Rich Walnut': { hb: ['Bryant', 'O'], fab: fab('Pimlico Crush Navy', 'SR16166', '#2C3550'), wall: ['Slatted wall panel', 'SWF', 'Espresso Walnut slats behind the bed', '#4B3326', 'grain'], lights: ['LB2R', 'LHW'] },
+'Mist Grey': { hb: ['Savoy Medium', 'SVM'], fab: fab('Pastiche Crush Slub Ice', 'SR18028', '#DDE1E3'), wall: ['Slatted wall panel', 'SWF', 'Charcoal Black slats behind the bed', '#2E2E2E', 'slat'], lights: ['LB2R', 'LIS1'] }
+};
+const LN = { LB2R: 'bridge downlights', LHW: 'warm white headboard glow', LHD1: 'wardrobe interior lights', LIS1: 'interior strip lights' };
+const xt = XT[moodColour || colour] || XT['Dove Grey'];
+const wallTex = xt.wall[4] === 'grain' ? grain : (xt.wall[4] === 'slat' ? G2 : 'none');
+const extrasOut = [
+{ kind: 'Upholstered headboard', name: xt.hb[0] + ' in ' + xt.fab.name, detail: (isTrad ? 'Buttoned' : 'Plain or buttoned') + ', sized to the bed', code: '169-' + xt.hb[1] + ' (5ft) · ' + xt.fab.code, hex: xt.fab.hex, grain: 'none' },
+{ kind: 'Feature wall', name: xt.wall[0], detail: xt.wall[2], code: xt.wall[1] + ' · priced per metre', hex: xt.wall[3], grain: wallTex === 'none' ? 'none' : (xt.wall[4] === 'slat' ? G2 : 'repeating-linear-gradient(90deg, rgba(0,0,0,0.22) 0 3px, transparent 3px 12px), ' + grain) },
+{ kind: 'Lighting', name: xt.lights.map(c => LN[c].charAt(0).toUpperCase() + LN[c].slice(1)).join(' + '), detail: 'Dimmable warm white, remote controlled', code: xt.lights.join(' · '), hex: '#F3E3B8', grain: 'none' }
+];
+const specRange = r.twoTone ? rangeName + ' · ' + colour + ' frame, ' + doorName + ' doors' : rangeName + ' · ' + doorName;
+const specOut = specRange + ' · ' + handleOut.label + ' · ' + xt.hb[0] + ' headboard, ' + xt.fab.name + ' ' + xt.fab.code + ' · ' + xt.wall[1] + ' ' + xt.wall[2].split(' behind')[0].split(' to ')[0] + ' · ' + xt.lights.join(' + ');
+return {
+rangeName: rangeName,
+styleLabel: styleLabel,
+hasSuggestion: byMood,
+suggestion: suggestion,
+title: s.title,
+intro: rangeLabel + ', set against ' + s.wall.name + ' walls and ' + s.a2.name + ' accents. ' + s.mood.charAt(0).toUpperCase() + s.mood.slice(1) + '.',
+footer: s.footer,
+textiles: s.textiles,
+hasNotice: notes.length > 0,
+notice: notes.join(' '),
+isShaker: r.style === 'shaker',
+isMoulded: r.style === 'moulded',
+isSorrento: r.style === 'sorrento',
+isHampton: r.style === 'hampton',
+isMilan: r.style === 'milan',
+leafPad: ({ shaker: '16px', moulded: '16px', sorrento: '10px', hampton: '14px', milan: '5px', plain: '0' })[r.style],
+frame: frame,
+leaf: leaf,
+leaves: leavesOut,
+wall: s.wall,
+accent2: s.a2,
+floor: s.floor,
+handle: handleOut,
+swatches: swatches,
+showSpec: props.showCadSpec !== false,
+extras: extrasOut,
+spec: specOut
+};
+}
+
+</script>
+<script>
+const MOODS = ['Light & airy','Warm & natural','Calm & neutral','Soft & tailored','Moody & grounded','Deep & restful','Natural & serene','Soft & warm'];
+const MOOD_LINE = { 'Light & airy': 'Bright, fresh and easy to live with', 'Warm & natural': 'Soft, earthy and relaxed', 'Calm & neutral': 'Quiet, light and restful', 'Soft & tailored': 'Crisp, considered and calm', 'Moody & grounded': 'Cosy, warm and grown-up', 'Deep & restful': 'Rich, cocooning and calm', 'Natural & serene': 'Organic, soft and grounding', 'Soft & warm': 'Gentle, warm and timeless' };
+const RANGES = {
+'Shaker': { d: 'Classic square-edged frame. Traditional meets contemporary.', colours: ['White','Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green','Soft Linen'] },
+'Sorrento': { d: 'A simpler, more modern take on the Shaker look.', colours: ['White','Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green','Soft Linen'] },
+'Hampton': { d: 'Decorative four-panel doors, made for period homes.', colours: ['White','Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green','Soft Linen'] },
+'Sherbourne': { d: 'Deep sculpted edging. Elegant and traditional.', colours: ['White','Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green','Soft Linen'] },
+'Milan': { d: 'Smooth doors with a stepped edge for a touch of character.', colours: ['White','Stone','Dove Grey','Slate','Graphite','Midnight Blue','Soft Linen','Nordic Oak','Rich Walnut'] },
+'Manhattan': { d: 'Clean, smooth lines. Effortlessly versatile.', colours: ['White','Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green','Soft Linen','Nordic Oak','Rich Walnut'] },
+'Element': { d: 'Scandinavian-inspired wood doors with a painted frame.', twoTone: true, colours: ['Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green'], doors: ['Nordic Oak','Swiss Elm'] },
+'Fusion': { d: 'Bold contrast: wood or concrete-effect doors with a deep frame.', twoTone: true, colours: ['Graphite','Midnight Blue','Willow Green'], doors: ['Rustic Oak','Urban Concrete'] },
+'Cosmopolitan': { d: 'Sleek white gloss doors with a frame colour of your choice.', twoTone: true, colours: ['Stone','Dove Grey','Slate','Graphite','Midnight Blue','Willow Green','Nordic Oak','Rich Walnut','Soft Linen'], doors: ['White Gloss'] },
+'Harmony': { d: 'Calm two-tone of soft cream doors and a walnut or oak frame.', twoTone: true, colours: ['Rich Walnut','Nordic Oak'], doors: ['Soft Linen'] },
+'Pure': { d: 'High gloss and beautifully simple. A breath of fresh air.', colours: ['White','Mist Grey'], gloss: true }
+};
+const HEX = { 'White': '#F2F2F0', 'Stone': '#CDC8C1', 'Dove Grey': '#E4E5E6', 'Slate': '#7F7F7F', 'Graphite': '#58585A', 'Midnight Blue': '#23293A', 'Willow Green': '#7A8475', 'Soft Linen': '#DED6C4', 'Nordic Oak': '#D2B48A', 'Rich Walnut': '#6A4A34', 'Swiss Elm': '#B89F82', 'Rustic Oak': '#9E7A52', 'Urban Concrete': '#9B9893', 'Mist Grey': '#D6D8D9', 'White Gloss': '#F5F5F3' };
+const WOOD = ['Nordic Oak','Rich Walnut','Swiss Elm','Rustic Oak'];
+const GRAIN = 'repeating-linear-gradient(90deg, rgba(60,40,20,0.10) 0 1px, transparent 1px 9px, rgba(60,40,20,0.06) 9px 10px, transparent 10px 23px)';
+const chipBg = (n) => 'background-color:' + HEX[n] + ';background-image:' + (WOOD.indexOf(n) >= 0 ? GRAIN : 'none');
+
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = (id) => document.getElementById(id);
+
+let cur = { startFrom: 'Mood & style', mood: 'Calm & neutral', style: 'Traditional', range: 'Shaker', colour: 'Dove Grey', doorFinish: 'Nordic Oak' };
+let shortlist = [];
+let custName = '';
+try { const s = JSON.parse(localStorage.getItem('jod-ipad') || 'null'); if (s) { shortlist = s.shortlist || []; custName = s.name || ''; } } catch (e) {}
+function persist() { try { localStorage.setItem('jod-ipad', JSON.stringify({ shortlist: shortlist, name: custName })); } catch (e) {} $('shortCount').textContent = shortlist.length; }
+
+let navStack = [];
+function go(id, push) {
+  const curOn = document.querySelector('.screen.on');
+  if (push !== false && curOn) navStack.push(curOn.id);
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  if (id === 'sResult') { drawResult(); requestAnimationFrame(fit); }
+  if (id === 'sShort') drawShort();
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go, false)));
+
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 1800); }
+
+function v(state) { return compute({ startFrom: state.startFrom, mood: state.mood, style: state.style, range: state.range, colour: state.colour, doorFinish: state.doorFinish }); }
+function strip(vals) { return '<div class="strip"><div style="background:' + vals.wall.hex + '"></div><div style="background-color:' + vals.leaf.hex + ';background-image:' + vals.leaf.grain + '"></div><div style="background:' + vals.frame.hex + '"></div><div style="background:' + vals.accent2.hex + '"></div></div>'; }
+
+function doorLeaf(vv, l, mini) {
+  const L = vv.leaf;
+  const panel = (flex, bw, off) => '<div style="flex:' + flex + ' 1 0;background:' + L.hex + ';border:' + bw + 'px solid ' + L.line + ';outline:' + bw + 'px solid ' + L.line2 + ';outline-offset:-' + off + 'px"></div>';
+  let inner = '';
+  if (vv.isShaker) inner = panel(3, 1, 5) + panel(2, 1, 5);
+  else if (vv.isMoulded) inner = panel(3, 2, 8) + panel(2, 2, 8);
+  else if (vv.isSorrento) inner = '<div style="flex:1 1 0;background:' + L.hex + ';border:1px solid ' + L.line + '"></div>';
+  else if (vv.isHampton) inner = panel(3, 2, 7) + panel(2, 2, 7) + panel(3, 2, 7) + panel(2, 2, 7);
+  else if (vv.isMilan) inner = '<div style="flex:1 1 0;background:' + L.hex + ';border:1px solid ' + L.line2 + ';outline:1px solid ' + L.line + ';outline-offset:-6px"></div>';
+  const h = vv.handle;
+  const hd = '<div style="position:absolute;' + l.side + ':' + l.off + ';top:' + h.top + ';width:' + h.w + ';height:' + h.h + ';border-radius:' + h.r + ';display:' + l.display + ';background:' + h.hex + '"></div>';
+  return '<div style="flex:1 1 0;background-color:' + L.hex + ';background-image:' + L.grain + ';border:1px solid ' + L.line + ';padding:' + vv.leafPad + ';display:flex;flex-direction:column;gap:16px;position:relative">' + inner + hd + '</div>';
+}
+function doorPair(vv, w, h) {
+  const k = 2.6;
+  return '<div style="width:' + w + 'px;height:' + h + 'px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;width:' + (w * k) + 'px;height:' + (h * k) + 'px;transform:scale(' + (1 / k) + ');transform-origin:top left;background:' + vv.frame.hex + ';border:2px solid ' + vv.frame.line + ';padding:30px 24px 0;box-sizing:border-box;display:flex;gap:8px">' + vv.leaves.map(l => doorLeaf(vv, l)).join('') + '</div></div>';
+}
+
+function renderBoard(st) {
+  const vv = v(st);
+  const eyebrow = 'font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#6B675F';
+  let html = '<div style="width:1200px;height:1150px;box-sizing:border-box;padding:44px 64px 56px;background:#F6F4EF;color:#2F2D2A;font-family:var(--sans);display:flex;flex-direction:column;gap:30px">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding-bottom:14px;border-bottom:1px solid #DCD8D0"><div style="font-size:15px;color:#3A3936">' + (custName ? 'Prepared for <span style="font-weight:500">' + esc(custName) + '</span>' : 'Your bedroom') + '</div><div style="font-family:var(--serif);font-style:italic;font-size:22px;color:#3A3936">Designed by Jonathan O’Driscoll</div></div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:32px"><div style="display:flex;flex-direction:column;gap:6px"><div style="' + eyebrow + '">' + esc(vv.styleLabel) + esc(vv.rangeName) + ' range</div><h1 style="margin:0;font-family:var(--serif);font-weight:400;font-size:60px;line-height:1">' + esc(vv.title) + '</h1></div><div style="font-size:15px;line-height:1.6;color:#55524B;max-width:460px;text-align:right">' + esc(vv.intro) + '</div></div>';
+  html += '<div style="display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;flex-grow:1;min-height:0">';
+  html += '<div style="display:flex;gap:28px;align-items:stretch"><div style="flex:1 1 0;background:' + vv.wall.hex + ';border-radius:6px;padding:28px 28px 0;display:flex;align-items:flex-end;justify-content:center"><div style="width:84%;height:92%;background:' + vv.frame.hex + ';border:1px solid ' + vv.frame.line + ';border-bottom:none;padding:18px 14px;box-sizing:border-box;display:flex;gap:4px">' + vv.leaves.map(l => doorLeaf(vv, l)).join('') + '</div></div>';
+  html += '<div style="width:170px;display:flex;flex-direction:column;gap:14px">';
+  html += '<div style="flex:3 1 0;background:' + vv.wall.hex + ';border-radius:6px;padding:14px;display:flex;flex-direction:column;justify-content:flex-end"><div style="font-size:13px;font-weight:500">Walls</div><div style="font-size:12px;color:#4A4741">' + esc(vv.wall.name) + ' tone</div></div>';
+  html += '<div style="flex:2 1 0;background:' + vv.floor.hex + ';border-radius:6px;padding:14px;display:flex;flex-direction:column;justify-content:flex-end;background-image:repeating-linear-gradient(90deg,rgba(90,60,30,0.12) 0 2px,transparent 2px 38px)"><div style="font-size:13px;font-weight:500;color:' + vv.floor.ink + '">Floor</div><div style="font-size:12px;color:' + vv.floor.ink + '">' + esc(vv.floor.label) + '</div></div>';
+  html += '<div style="flex:2 1 0;background:' + vv.accent2.hex + ';border-radius:6px;padding:14px;display:flex;flex-direction:column;justify-content:flex-end"><div style="font-size:13px;font-weight:500;color:' + vv.accent2.ink + '">Textiles</div><div style="font-size:12px;color:' + vv.accent2.ink + '">' + esc(vv.textiles) + '</div></div>';
+  html += '<div style="flex:1 1 0;background:#ECEBE8;border-radius:6px;padding:14px;display:flex;align-items:center;gap:10px"><div style="width:26px;height:26px;flex-shrink:0;border-radius:50%;background:' + vv.handle.hex + '"></div><div style="display:flex;flex-direction:column"><div style="font-size:13px;font-weight:500">Handles</div><div style="font-size:12px;color:#55524B">' + esc(vv.handle.label) + '</div></div></div>';
+  html += '</div></div>';
+  html += '<div style="display:flex;flex-direction:column;gap:20px"><div style="' + eyebrow + '">The palette</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">';
+  vv.swatches.forEach(s => { html += '<div style="display:flex;gap:14px;align-items:center"><div style="width:72px;height:72px;flex-shrink:0;border-radius:6px;background-color:' + s.hex + ';background-image:' + s.grain + ';border:1px solid #D3D4D5"></div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:16px;font-weight:500">' + esc(s.name) + '</div><div style="font-size:13px;color:#55524B">' + esc(s.use) + '</div><div style="font-size:12px;color:#6B675F">' + esc(s.code) + '</div></div></div>'; });
+  html += '</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:10px;margin-top:4px"><div style="' + eyebrow + '">Balance</div><div style="display:flex;height:18px;border-radius:4px;overflow:hidden;border:1px solid #DCD8D0"><div style="flex:60 1 0;background:' + vv.wall.hex + '"></div><div style="flex:30 1 0;background-color:' + vv.leaf.hex + ';background-image:' + vv.leaf.grain + '"></div><div style="flex:10 1 0;background:' + vv.accent2.hex + '"></div></div><div style="display:flex;font-size:12px;color:#55524B"><div style="flex:60 1 0">60% ' + esc(vv.wall.name) + ' walls</div><div style="flex:30 1 0">30% ' + esc(vv.leaf.name) + ' furniture</div><div style="flex:10 1 0">10% ' + esc(vv.accent2.name) + '</div></div></div>';
+  html += '<div style="display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:16px;border-top:1px solid #DCD8D0"><div style="font-size:15px;line-height:1.6">' + esc(vv.footer) + '</div><div style="font-size:12px;color:#6B675F">Furniture finishes are Sharps; walls and accents are Farrow &amp; Ball. Colours on screen are approximate, so we recommend sample pots, as colours change with the light in your room.</div></div>';
+  html += '</div></div>';
+  html += '<div style="display:flex;flex-direction:column;gap:16px;border-top:1px solid #DCD8D0;padding-top:22px"><div style="' + eyebrow + '">Complete the look with Sharps</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">';
+  vv.extras.forEach(e => { html += '<div style="display:flex;gap:14px;align-items:flex-start"><div style="width:64px;height:64px;flex-shrink:0;border-radius:6px;background-color:' + e.hex + ';background-image:' + e.grain + ';border:1px solid #D3D4D5"></div><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><div style="font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#6B675F">' + esc(e.kind) + '</div><div style="font-size:16px;font-weight:500">' + esc(e.name) + '</div><div style="font-size:13px;color:#55524B;line-height:1.45">' + esc(e.detail) + '</div></div></div>'; });
+  html += '</div></div></div>';
+  return html;
+}
+
+function fit() {
+  const wrap = $('resultWrap');
+  const sc = Math.min(wrap.clientWidth / 1200, wrap.clientHeight / 1150);
+  $('board').style.transform = 'scale(' + sc + ')';
+  $('boardBox').style.width = (1200 * sc) + 'px';
+  $('boardBox').style.height = (1150 * sc) + 'px';
+}
+window.addEventListener('resize', () => { if ($('sResult').classList.contains('on')) fit(); });
+
+function drawResult() {
+  $('board').innerHTML = renderBoard(cur);
+  const byMood = cur.startFrom === 'Mood & style';
+  $('flipStyle').style.display = byMood ? '' : 'none';
+  $('flipStyle').textContent = cur.style === 'Traditional' ? 'Try contemporary' : 'Try traditional';
+  $('changeColour').textContent = byMood ? 'Change feeling' : 'Change colour';
+}
+
+/* Mood path */
+function drawMoods() {
+  $('moodGrid').innerHTML = MOODS.map(m => {
+    const vv = v({ startFrom: 'Mood & style', mood: m, style: 'Traditional', range: 'Shaker', colour: 'White', doorFinish: 'Nordic Oak' });
+    return '<button class="tile' + (cur.mood === m && cur.startFrom === 'Mood & style' ? ' sel' : '') + '" type="button" data-m="' + esc(m) + '">' + strip(vv) + '<div class="tname">' + esc(m) + '</div><div class="tdesc">' + esc(MOOD_LINE[m]) + '</div></button>';
+  }).join('');
+  $('moodGrid').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cur.startFrom = 'Mood & style'; cur.mood = b.dataset.m; drawStyles(); go('sStyle'); }));
+}
+function drawStyles() {
+  $('styleGrid').innerHTML = ['Traditional', 'Contemporary'].map(s => {
+    const vv = v({ startFrom: 'Mood & style', mood: cur.mood, style: s, range: 'Shaker', colour: 'White', doorFinish: 'Nordic Oak' });
+    return '<button class="bigbtn" type="button" data-s="' + s + '" style="justify-content:space-between"><div class="doorPrev">' + doorPair(vv, 200, 170) + '</div><div><div class="tname">' + s + '</div><div class="tdesc">' + (s === 'Traditional' ? 'Classic framed doors with timeless detailing.' : 'Clean, modern lines and simple shapes.') + ' Shown in ' + esc(vv.rangeName) + '.</div></div></button>';
+  }).join('');
+  $('styleGrid').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cur.style = b.dataset.s; go('sResult'); }));
+}
+
+/* Range path */
+function drawRanges() {
+  $('rangeGrid').innerHTML = Object.keys(RANGES).map(r => {
+    const R = RANGES[r];
+    const col = R.colours.indexOf('Dove Grey') >= 0 ? 'Dove Grey' : R.colours[0];
+    const vv = v({ startFrom: 'Sharps range', range: r, colour: col, doorFinish: R.doors ? R.doors[0] : 'Nordic Oak', mood: 'Calm & neutral', style: 'Traditional' });
+    return '<button class="tile' + (cur.range === r && cur.startFrom === 'Sharps range' ? ' sel' : '') + '" type="button" data-r="' + esc(r) + '"><div class="doorPrev">' + doorPair(vv, 150, 170) + '</div><div class="tname">' + esc(r) + '</div><div class="tdesc">' + esc(R.d) + '</div></button>';
+  }).join('');
+  $('rangeGrid').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    const R = RANGES[b.dataset.r];
+    cur.startFrom = 'Sharps range'; cur.range = b.dataset.r;
+    if (R.colours.indexOf(cur.colour) < 0) cur.colour = R.colours.indexOf('Dove Grey') >= 0 ? 'Dove Grey' : R.colours[0];
+    if (R.doors && R.doors.indexOf(cur.doorFinish) < 0) cur.doorFinish = R.doors[0];
+    drawColours(); go('sColour');
+  }));
+}
+function drawColours() {
+  const R = RANGES[cur.range];
+  $('colourEyebrow').textContent = 'Step 2 · ' + cur.range;
+  $('colourTitle').textContent = R.twoTone ? 'Choose a frame colour' : 'Choose a colour';
+  $('colourGrid').innerHTML = R.colours.map(c => '<button class="sw' + (c === cur.colour ? ' sel' : '') + '" type="button" data-c="' + esc(c) + '"><div class="chip" style="' + chipBg(c) + '"></div><span>' + esc(c) + '</span></button>').join('');
+  $('colourGrid').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cur.colour = b.dataset.c; drawColours(); }));
+  const doors = R.doors || [];
+  $('doorBlock').style.display = doors.length ? '' : 'none';
+  $('doorGrid').innerHTML = doors.map(d => '<button class="sw' + (d === cur.doorFinish || doors.length === 1 ? ' sel' : '') + '" type="button" data-d="' + esc(d) + '"><div class="chip" style="' + chipBg(d) + '"></div><span>' + esc(d) + '</span></button>').join('');
+  $('doorGrid').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cur.doorFinish = b.dataset.d; drawColours(); }));
+}
+
+/* Result actions */
+$('resultBack').addEventListener('click', () => go(cur.startFrom === 'Mood & style' ? 'sStyle' : 'sColour', false));
+$('flipStyle').addEventListener('click', () => { cur.style = cur.style === 'Traditional' ? 'Contemporary' : 'Traditional'; drawResult(); });
+$('changeColour').addEventListener('click', () => { if (cur.startFrom === 'Mood & style') { drawMoods(); go('sMood', false); } else { drawColours(); go('sColour', false); } });
+$('saveLook').addEventListener('click', () => {
+  const key = JSON.stringify(cur);
+  if (shortlist.some(s => JSON.stringify(s) === key)) { toast('Already in your shortlist'); return; }
+  shortlist.push(Object.assign({}, cur)); persist(); toast('Saved to your shortlist');
+});
+$('toShort').addEventListener('click', () => go('sShort'));
+$('seeLook').addEventListener('click', () => go('sResult'));
+$('goMood').addEventListener('click', () => { drawMoods(); go('sMood'); });
+$('goRange').addEventListener('click', () => { drawRanges(); go('sRange'); });
+$('goShort').addEventListener('click', () => go('sShort'));
+$('custName').value = custName;
+$('custName').addEventListener('input', e => { custName = e.target.value; persist(); });
+
+function describe(st) { const vv = v(st); return { vv: vv, label: (st.startFrom === 'Mood & style' ? vv.title + ' · ' + st.style : vv.title) }; }
+function drawShort() {
+  $('designerBox').style.display = 'none';
+  $('shortLead').textContent = shortlist.length ? 'Tap a look to see it again, or remove ones you’ve gone off.' : 'Nothing saved yet. Tap “Save this look” on any look you like.';
+  $('shortList').innerHTML = shortlist.map((st, i) => {
+    const d = describe(st);
+    const fin = RANGES[d.vv.rangeName] && RANGES[d.vv.rangeName].twoTone ? d.vv.frame.name + ' frame, ' + d.vv.leaf.name + ' doors' : d.vv.leaf.name;
+    return '<div class="sheet">' + strip(d.vv) + '<div style="flex:1"><div class="tname" style="font-size:24px">' + esc(d.label) + '</div><div class="tdesc">' + esc(d.vv.rangeName) + ' in ' + esc(fin) + ' · ' + esc(d.vv.handle.label) + '</div></div><button class="pill" type="button" data-open="' + i + '">View</button><button class="pill" type="button" data-del="' + i + '" aria-label="Remove">Remove</button></div>';
+  }).join('');
+  $('shortList').querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => { cur = Object.assign({}, shortlist[+b.dataset.open]); go('sResult'); }));
+  $('shortList').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { shortlist.splice(+b.dataset.del, 1); persist(); drawShort(); }));
+}
+$('showDesigner').addEventListener('click', () => {
+  if (!shortlist.length) { toast('Save a look first'); return; }
+  $('specList').innerHTML = shortlist.map((st, i) => '<div class="sheet"><div class="spec"><span style="font-weight:600">' + (i + 1) + '. ' + esc(describe(st).label) + '</span><br>' + esc(v(st).spec) + '</div></div>').join('');
+  $('designerBox').style.display = '';
+  $('designerBox').scrollIntoView({ behavior: 'smooth' });
+});
+$('newCustomer').addEventListener('click', () => {
+  if (!confirm('Clear the shortlist and name, ready for a new customer?')) return;
+  shortlist = []; custName = ''; $('custName').value = ''; cur = { startFrom: 'Mood & style', mood: 'Calm & neutral', style: 'Traditional', range: 'Shaker', colour: 'Dove Grey', doorFinish: 'Nordic Oak' };
+  persist(); navStack = []; go('sWelcome', false);
+});
+
+persist();
+if ('serviceWorker' in navigator && location.protocol === 'https:') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
+</script>
+</body>
+</html>
