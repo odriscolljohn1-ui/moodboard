@@ -26,7 +26,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 h1 { font-family: var(--serif); font-weight: 400; font-size: 52px; line-height: 1.05; margin: 6px 0 8px; }
 h2 { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1.1; margin: 4px 0 6px; }
 .lead { font-size: 18px; color: #55524B; line-height: 1.5; margin: 0 0 24px; max-width: 680px; }
-.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
 .grid { display: grid; gap: 18px; }
 .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -125,17 +125,20 @@ h2 { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 
 
 <section class="screen" id="sShort">
 <div class="top"><button class="back" type="button" data-go="sWelcome">‹ Back</button><div class="sig">Designed by Jonathan O’Driscoll</div></div>
-<h2>Your shortlist</h2>
-<p class="lead" id="shortLead">Tap a look to see it again.</p>
-<div class="scroll"><div class="grid" id="shortList"></div>
-<div id="designerBox" style="display: none; margin-top: 26px">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px">
+<div><h2>Your shortlist</h2>
+<p class="lead" id="shortLead" style="margin: 0">Tap a look to see it again.</p></div>
+<div style="display: flex; gap: 12px; flex-wrap: wrap">
+<button class="pill dark" type="button" id="showDesigner">Show my designer</button>
+<button class="pill" type="button" id="newCustomer">Start again for a new customer</button>
+</div>
+</div>
+<div class="scroll">
+<div id="designerBox" style="display: none; margin-bottom: 26px">
 <div class="eyebrow" style="margin-bottom: 10px">For your designer</div>
 <div class="grid" id="specList"></div>
 </div>
-</div>
-<div class="bar">
-<button class="pill" type="button" id="showDesigner">Show my designer</button>
-<button class="pill" type="button" id="newCustomer">Start again for a new customer</button>
+<div class="grid" id="shortList"></div>
 </div>
 </section>
 
@@ -542,7 +545,7 @@ $('showDesigner').addEventListener('click', () => {
   if (!shortlist.length) { toast('Save a look first'); return; }
   $('specList').innerHTML = shortlist.map((st, i) => '<div class="sheet"><div class="spec"><span style="font-weight:600">' + (i + 1) + '. ' + esc(describe(st).label) + '</span><br>' + esc(v(st).spec) + '</div></div>').join('');
   $('designerBox').style.display = '';
-  $('designerBox').scrollIntoView({ behavior: 'smooth' });
+  $('designerBox').parentNode.scrollTop = 0;
 });
 $('newCustomer').addEventListener('click', () => {
   if (!confirm('Clear the shortlist and name, ready for a new customer?')) return;
